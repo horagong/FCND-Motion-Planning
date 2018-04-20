@@ -39,13 +39,12 @@ These scripts contain a basic planning implementation `plan_path()` that include
 This scripts make the drone fly zig-zag along the waypoints. It can be smoothed out by pruning the path.
 
 
-And here's a lovely image of my results (ok this image has nothing to do with it, but it's a nice example of how to include images in your writeup!)
-![Top Down View](./misc/high_up.png)
-
-
 ### Implementing Your Path Planning Algorithm
 
 #### 1. Set your global home position
+The csv file describes the downtown San Francisco environment.
+![Map of SF](./misc/map.png)
+
 The first line of the csv file is lat0 and lon0 of the certain position which the local position of obstacles is relatvie to.
 ```
 # DONE: read lat0, lon0 from colliders into floating point values
@@ -57,9 +56,6 @@ lon0 = float(home_pos_data[1].strip().split(' ')[1])
 # DONE: set home position to (lon0, lat0, 0)
 self.set_home_position(lon0, lat0, 0)
 ```
-
-The csv file describes the downtown San Francisco environment.
-![Map of SF](./misc/map.png)
 
 #### 2. Set your current local position
 The current local position can be obtained from,
@@ -76,7 +72,7 @@ grid_start = (int(current_local_position[0] -north_offset), int(current_local_po
 ```
 Or when I use the graph representation, I use this,
 ```
-grid_start_g = closest_point(G, grid_start)
+closest_grid_start = closest_point(G, grid_start)
 ```
 
 #### 4. Set grid goal position from geodetic coords
@@ -115,7 +111,7 @@ if x + 1 < 0 or y - 1 < 0 or grid[x + 1, y - 1] == 1:
 if x + 1 < 0 or y + 1 < 0 or grid[x + 1, y + 1] == 1:
     valid_actions.remove(Action.SOUTH_EAST)
 ```
-I also tried A* graph search. A* search for grid choose the next_node by applying valid_actions.
+A* search for grid chooses the next_node by applying these valid_actions.
 ```
 for action in valid_actions(grid, current_node):
     # get the tuple representation
@@ -124,7 +120,11 @@ for action in valid_actions(grid, current_node):
     branch_cost = current_cost + action.cost
     queue_cost = branch_cost + h(next_node, goal)
 ```
-But A* search for graph choose the next_node from the graph.
+I also tried the graph representaion. The graph is made by Voronoi algorithm with `the center points of the obstacles` and each edge from graph.ridge_vertices is checked for collision with `the grid of obstacles`.
+```
+edges = create_edges_from_grid(grid, points)
+```
+In case of the graph represetation, a* search can choose the next_node from the graph directly.
 ```
 for next_node in graph[current_node]:
     cost = graph.edges[current_node, next_node]['weight']
